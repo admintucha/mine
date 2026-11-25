@@ -1,3 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // =====================================================
 // TUCHA MINES — сервер «Мин» для Render (Node 18+, без зависимостей)
 // Поля 3×3 / 5×5 / 7×7 / 10×10. Мины и выплаты считает только этот сервер.
@@ -16,7 +37,7 @@ const GAS = process.env.GAS_URL || "";
 const SECRET = process.env.PVP_SECRET || "";
 const PORT = process.env.PORT || 3000;
 
-const MAX_BET = 100, MAX_WIN = 500, RTP = 0.88;
+const MAX_BET = 100, MAX_WIN = 500, RTP = 0.92;
 // min/max мин для каждого размера — должно совпадать с MX_SIZES в index.html
 const SIZES = {3: {cells: 9, min: 1, max: 8}, 5: {cells: 25, min: 1, max: 24}, 7: {cells: 49, min: 2, max: 40}, 10: {cells: 100, min: 3, max: 50}};
 
@@ -163,3 +184,7 @@ http.createServer((req, res) => {
   // Память пуста → все «открытые» ставки мертвы → вернуть их игрокам
   for (let i = 0; i < 5; i++) { try { const r = await gas("pvp_mines_recover"); console.log("recover:", r.refunded); break; } catch (e) { console.log("recover failed:", e.message); await sleep(3000); } }
 });
+
+
+
+
