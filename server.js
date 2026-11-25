@@ -1,3 +1,8 @@
+##########################################################################################
+RENDER SERVER — server.js (исправленная версия)
+Исходное имя для установки: server.js
+##########################################################################################
+
 
 
 
@@ -77,10 +82,28 @@ function verifyInit(initData) {
 
 // ---------- Мост к Google Apps Script ----------
 async function gas(action, body) {
-  const res = await fetch(GAS, {method: "POST", redirect: "follow", body: JSON.stringify(Object.assign({action, secret: SECRET}, body || {}))});
-  let d; try { d = await res.json(); } catch (e) { throw new Error("Таблица не ответила. Попробуй ещё раз."); }
-  if (!d || d.status !== "success") throw new Error((d && d.message) || "Ошибка таблицы.");
-  return d;
+  if (!GAS || !SECRET) throw new Error("Сервер Мин не настроен: проверь GAS_URL и PVP_SECRET в Render.");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(GAS, {
+      method: "POST",
+      redirect: "follow",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(Object.assign({action, secret: SECRET}, body || {})),
+      signal: controller.signal
+    });
+    if (!res.ok) throw new Error("Таблица временно недоступна (HTTP " + res.status + ").");
+    let d;
+    try { d = await res.json(); } catch (e) { throw new Error("Таблица вернула некорректный ответ."); }
+    if (!d || d.status !== "success") throw new Error((d && d.message) || "Ошибка таблицы.");
+    return d;
+  } catch (e) {
+    if (e && e.name === "AbortError") throw new Error("Таблица отвечает слишком долго. Повтори действие.");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 async function closeBet(betId, payout) {
   for (let i = 0; i < 3; i++) { try { return await gas("pvp_mines_credit", {bet_id: betId, payout}); } catch (e) { await sleep(500); } }
@@ -194,7 +217,3 @@ http.createServer((req, res) => {
   // Память пуста → все «открытые» ставки мертвы → вернуть их игрокам
   for (let i = 0; i < 5; i++) { try { const r = await gas("pvp_mines_recover"); console.log("recover:", r.refunded); break; } catch (e) { console.log("recover failed:", e.message); await sleep(3000); } }
 });
-
-
-
-
